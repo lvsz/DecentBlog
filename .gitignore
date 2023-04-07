@@ -1,0 +1,12 @@
+*.beam
+build
+
+.*.sw?
+*.sw?
+
+*.config
+
+.DS_store
+
+_build
+
