@@ -1,12 +1,11 @@
-*.beam
 build
+logs
+data
+
+erlang_ls.config
+_build
 
 .*.sw?
 *.sw?
 
-*.config
-
 .DS_store
-
-_build
-
