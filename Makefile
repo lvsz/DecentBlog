@@ -1,26 +1,35 @@
 .PHONY: all test benchmark clean
 
-BUILD		:= ./build
+export ERLC ERLC_FLAGS HEADERS BUILD VPATH RUN_SH
+
+BUILD		= ./build
+SRC			= ./src
+INCLUDE		= ./include
+VPATH		= $(SRC):$(BUILD):$(INCLUDE)
+
+ERL_FILES	= $(wildcard $(SRC)/*.erl)
+OBJECTS		= $(ERL_FILES:$(SRC)/%.erl=%.beam)
+HEADERS		= $(wildcard $(INCLUDE)/*.hrl)
+ERLC_FLAGS	= -Wall -I $(INCLUDE)
+ERLC		= erlc +debug_info
+RUN_SH		= ./run.sh
+
 $(shell mkdir -p $(BUILD))
 
-ERL_SRC		:= $(wildcard ./src/*.erl)
-ERL_HRL		:= $(wildcard ./include/*.hrl)
-ERL_BEAM	:= $(ERL_SRC:./src/%.erl=$(BUILD)/%.beam)
-ERLC_FLAGS	:= -o $(BUILD) -I ./include
-ERLC		:= erlc +debug_info -Wall
+all: $(OBJECTS)
 
-all: $(ERL_BEAM)
+%.beam: %.erl $(HEADERS)
+	$(ERLC) $(ERLC_FLAGS) -o $(BUILD) $<
 
-$(BUILD)/%.beam: ./src/%.erl $(ERL_HRL)
-	$(ERLC) $(ERLC_FLAGS) $<
+test:
+	@$(MAKE) -f test/Makefile -B run_tests
 
-test: $(BEAM)
-	exit 1 # TODO
-	./run.sh supervisor test
 
-benchmark: $(BEAM)
+benchmark: *.beam
 	exit 1 # TODO
 	./run_benchmarks.sh
 
 clean:
-	$(RM) $(ERL_BEAM) erl_crash.dump
+	$(RM) -r $(BUILD) erl_crash.dump
+	@$(MAKE) -f test/Makefile clean_tests
+
