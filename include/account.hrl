@@ -10,7 +10,7 @@
     id :: account:id(),
     server :: server:id(),
     password :: binary(),
-    subscriptions = comms:new_follow_list() :: comms:subs(),
+    subscriptions = comms:new_follow_list() :: comms:follow_list(),
     pid = self() :: pid()
 }).
 

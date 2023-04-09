@@ -1,8 +1,12 @@
 -module(server).
+
+-export([actor/1, new/1]).
+
+-include_lib("kernel/include/logger.hrl").
+
 -include("comms.hrl").
 -include("server.hrl").
 -include("account.hrl").
--export([actor/1]).
 
 -type id() :: atom().
 
@@ -10,21 +14,31 @@
 post_blogpost(Blogpost, ServerPID) ->
     todo.
 
--spec create_server(URI :: string(), Config :: #server{}) -> pid().
-create_server(URI, Config) -> todo.
+-spec new(ID :: id()) -> #server{}.
+new(ID) ->
+    #server{
+        id = ID,
+        users = account:new_db(),
+        active = dict:new(),
+        channel = comms:new_channel(server)
+    }.
 
 -spec actor(Data :: #server{}) -> no_return().
 actor(Data) ->
     receive
+        %% register new account
         {Sender, register, Account} ->
             case register_user(Sender, Account, Data) of
                 {ok, NewData} ->
+                    ?LOG_DEBUG("ok: Register account", [Account#account.id]),
                     Sender ! {self(), registered},
                     actor(NewData);
                 {fail, username_taken} ->
+                    ?LOG_DEBUG("fail: Register account", [Account#account.id]),
                     Sender ! {self(), username_taken},
                     actor(Data)
             end;
+        %% log in with existing account
         {Sender, login, Username, Password} ->
             case login_user(Data, Username, Password) of
                 {ok, Account} ->
@@ -35,7 +49,8 @@ actor(Data) ->
                     Sender ! {self(), login_fail, Reason},
                     actor(Data)
             end;
-        {Sender, log_out, Username} ->
+        %% log out
+        {Sender, logout, Username} ->
             Sender ! {self(), logged_out},
             NewData = Data#server{
                 active = sets:del_element(Username, Data#server.active)
@@ -55,6 +70,7 @@ actor(Data) ->
         %            Sender ! {self(), posted}
         %    end,
         %    actor(NewData);
+        %% retrieve posts based on user privilege
         {Sender, get_posts} ->
             case dict:is_key(Sender, Data#server.active) of
                 true -> Scope = all;

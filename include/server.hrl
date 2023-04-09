@@ -4,13 +4,14 @@
 
 -ifndef(SERVER_HRL_).
 -define(SERVER_HRL_, 1).
+
 %%--------------------------------------------------------------------------
 
 -record(server, {
-    id = none :: server:id(),
-    users = account:new_db() :: account:db(),
-    active = dict:new() :: dict:dict(pid(), account:id()),
-    channel = comms:new_channel(server) :: comms:channel()
+    id :: server:id(),
+    users :: account:db(),
+    active :: dict:dict(pid(), account:id()),
+    channel :: comms:channel()
 }).
 
 %%--------------------------------------------------------------------------
