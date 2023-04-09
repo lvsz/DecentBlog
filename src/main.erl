@@ -1,28 +1,27 @@
-%%%----FILE supervisor.erl----
+%%%----FILE main.erl----
 
 %%%
 
--module(supervisor).
--export([initialize/0]).
--include("comms.hrl").
+-module(main).
+
+-export([initialize/0, initialize/1]).
+
+%-include("comms.hrl").
+-include("account.hrl").
 -include("server.hrl").
 
-% 1. initialize servers & channels
-% 2. listen for logins
-%
+-include_lib("kernel/include/logger.hrl").
+
 initialize() ->
-    case file:consult("servers") of
+    case file:consult("data/servers") of
         {ok, Servers} ->
             initialize(Servers);
         {error, enoent} ->
-            initialize([dict:new()]);
+            initialize([server:new(no_id)]);
         {error, Reason} ->
             error({?FUNCTION_NAME, Reason})
     end.
 
-% a channel is any collection of posts
-% each server has a private and public channel
-% A server is a name, a list of users, a private channel, and a public channel
 initialize([]) ->
     done;
 initialize([Server | Servers]) ->
