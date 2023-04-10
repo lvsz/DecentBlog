@@ -11,19 +11,27 @@ TESTDIR		:= ./test
 VPATH		:= $(VPATH):$(TESTDIR)
 
 SUITE		:= _SUITE
-ERL_FILES	:= $(wildcard $(TESTDIR)/*$(TEST_SUITE).erl)
+tests		:= _tests
+ERL_FILES	:= $(wildcard $(TESTDIR)/*.erl)
 OBJECTS		:= $(ERL_FILES:$(TESTDIR)/%.erl=%.beam)
+SUITES		:= $(notdir $(basename $(wildcard $(TESTDIR)/*$(SUITE).erl)))
 
 CONFIG		:= -config ./config/test
 RUN_ARGS	:= $(CONFIG) -pa $(BUILD)
 
 $(shell mkdir -p $(BUILD))
 
-run_tests: $(OBJECTS)
+run_tests: $(info running $(SUITES))
+run_tests: $(OBJECTS) $(SUITES)
+
+%$(SUITE):
+	$(RUN_SH) $@ test $(RUN_ARGS)
 
 %$(SUITE).beam: %$(SUITE).erl %.erl $(HEADERS)
 	$(ERLC) $(ERLC_FLAGS) -o $(BUILD) $<
-	$(RUN_SH) $*$(SUITE) test $(RUN_ARGS)
+
+%$(tests).beam: %$(tests).erl %.erl $(HEADERS)
+	$(ERLC) $(ERLC_FLAGS) -o $(BUILD) $<
 
 clean_tests:
 	$(RM) -r $(BUILD) ./logs

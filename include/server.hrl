@@ -7,6 +7,8 @@
 
 %%--------------------------------------------------------------------------
 
+-define(MAIN, '__TOP_ACTOR__').
+
 -record(server, {
     id :: server:id(),
     users :: account:db(),

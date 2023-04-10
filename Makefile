@@ -21,8 +21,8 @@ all: $(OBJECTS)
 %.beam: %.erl $(HEADERS)
 	$(ERLC) $(ERLC_FLAGS) -o $(BUILD) $<
 
-test:
-	@$(MAKE) -f test/Makefile -B run_tests
+test: all
+	@$(MAKE) -f test/Makefile run_tests
 
 
 benchmark: *.beam
