@@ -29,9 +29,9 @@ actor(Data) ->
         %% register new account
         {Sender, register, Account} ->
             case register_user(Sender, Account, Data) of
-                {ok, NewData} ->
+                {ok, NewAccount, NewData} ->
                     ?LOG_DEBUG("ok: Register account", [Account#account.id]),
-                    Sender ! {self(), registered},
+                    Sender ! {self(), registered, NewAccount},
                     actor(NewData);
                 {fail, username_taken} ->
                     ?LOG_DEBUG("fail: Register account", [Account#account.id]),
@@ -90,9 +90,12 @@ register_user(Sender, Account, Data) ->
                 users = NewUserDB,
                 active = dict:store(Sender, Account#account.id, Data#server.active)
             },
-            {ok, NewData};
+            {ok, NewAccount, NewData};
         {fail, username_taken} ->
-            {fail, username_taken}
+            {fail, username_taken};
+        ERROR ->
+            ?LOG_ALERT("Uknown value", ERROR),
+            {fail, ERROR}
     end.
 
 login_user(Data, Username, Password) ->
