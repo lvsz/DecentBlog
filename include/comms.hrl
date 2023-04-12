@@ -15,9 +15,8 @@
 
 -record(blogpost, {
     ref = make_ref() :: reference(),
-    title = "" :: string(),
-    body = "" :: string(),
-    author :: user:id(),
+    user :: user:id(),
+    text = "" :: string(),
     scope :: comms:scope(),
     tags = [] :: [term()],
     mentions = [] :: [user:id()],
