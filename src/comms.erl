@@ -1,16 +1,20 @@
 -module(comms).
--export([new_channel/1, new_follow_list/0, follow/2, get_posts/2, post_to/2]).
--export_type([scope/0, channel/0, follow_list/0]).
--include("comms.hrl").
+-export([new_post/2, new_channel/1, get_posts/2, post_to/2]).
+-export_type([scope/0, channel/0]).
 
+-type scope() :: public | server | account | invite.
 -type channel(Scope) :: {Scope, [post()]}.
 -type channel() :: channel(_).
 -type post() :: #{
     user => user:id(),
     text => string()
 }.
--type scope() :: public | server | account | invite.
--type follow_list() :: [reference()].
+
+-spec new_post(UserID, Text) -> post() when
+    UserID :: user:id(),
+    Text :: string().
+new_post(UserID, Text) ->
+    #{user => UserID, text => Text}.
 
 -spec new_channel(Scope :: scope()) -> channel().
 new_channel(Scope) -> {Scope, []}.
@@ -31,11 +35,12 @@ get_posts(Number, Channel) ->
     {_Scope, Posts} = Channel,
     lists:sublist(Posts, Number).
 
--spec new_follow_list() -> follow_list().
-new_follow_list() -> [].
--spec follow(Channel :: channel(), Subs :: follow_list()) -> follow_list().
-follow(Channel, Subs) ->
-    case lists:member(Channel, Subs) of
-        true -> Subs;
-        false -> [Channel | Subs]
-    end.
+%-spec new_follow_list() -> follow_list().
+%new_follow_list() -> [].
+%-spec follow(Channel :: channel(), Subs :: follow_list()) -> follow_list().
+%follow(Channel, Subs) ->
+%    case lists:member(Channel, Subs) of
+%        true -> Subs;
+%        false -> [Channel | Subs]
+%    end.
+%

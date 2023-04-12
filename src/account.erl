@@ -35,7 +35,7 @@ add_server(ServerID, Account) ->
     case Account of
         #account{server = undefined} ->
             Account#account{server = ServerID};
-        #account{server = ID} ->
+        #account{} ->
             ?LOG_ERROR("Account already assigned a server: ~w", [Account]),
             error(server_defined, [Account, ServerID])
     end.

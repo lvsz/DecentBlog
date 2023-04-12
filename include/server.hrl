@@ -12,7 +12,7 @@
 -record(server, {
     id :: server:id(),
     users :: account:db(),
-    active :: dict:dict(pid(), account:id()),
+    active :: #{pid() => account:id()},
     channel :: comms:channel()
 }).
 
