@@ -8,7 +8,7 @@
 
 -record(account, {
     id :: account:id(),
-    server :: server:id(),
+    server :: server:id() | undefined,
     password :: binary(),
     subscriptions :: comms:follow_list()
 }).
