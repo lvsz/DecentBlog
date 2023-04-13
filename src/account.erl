@@ -2,31 +2,27 @@
 
 -export([new/2, add_server/2, new_db/0, db_store/2, db_fetch/2]).
 -export([register/3, login/4, logout/3]).
--export_type([id/0, db/0]).
+-export_type([account/0, id/0, db/0]).
 
 -include_lib("kernel/include/logger.hrl").
 -include_lib("eunit/include/eunit.hrl").
--include("account.hrl").
--include("server.hrl").
-%-record(account, {
-%    id :: account:id(),
-%    server :: server:id() | undefined,
-%    password :: binary(),
-%    subscriptions :: comms:follow_list()
-%}).
 
 -type id() :: atom().
--type db() :: dict:dict(id(), #account{}).
--type account() :: #account{}.
+-type account() :: #{
+    id := account:id(),
+    password := pw:pw(),
+    server := server:id()
+}.
+-type db() :: dict:dict(id(), account()).
 
--define(getID(Account), Account#account.id).
+-define(getID(Account), map_get(id, Account)).
 
 -spec new(Name :: id(), Password :: binary()) -> account().
 new(Name, Password) ->
-    #account{
-        id = Name,
-        password = Password,
-        server = undefined
+    #{
+        id => Name,
+        password => Password,
+        server => undefined
     }.
 
 -spec new_db() -> db().
@@ -36,9 +32,9 @@ new_db() -> dict:new().
     ServerID :: server:id().
 add_server(ServerID, Account) ->
     case Account of
-        #account{server = undefined} ->
-            Account#account{server = ServerID};
-        #account{} ->
+        #{server := undefined} ->
+            Account#{server := ServerID};
+        #{} ->
             ?LOG_ERROR("Account already assigned a server: ~w", [Account]),
             error(server_defined, [Account, ServerID])
     end.
@@ -52,7 +48,7 @@ db_store(Account, DB) ->
         false -> {ok, dict:store(UID, Account, DB)}
     end.
 
--spec db_fetch(UID :: id(), DB :: db()) -> account().
+-spec db_fetch(UID :: account:id(), DB :: account:db()) -> account().
 db_fetch(UID, DB) -> dict:fetch(UID, DB).
 
 -spec register(Sender, Account, Data1) -> Data2 when
@@ -61,17 +57,17 @@ db_fetch(UID, DB) -> dict:fetch(UID, DB).
     Data1 :: server:data(),
     Data2 :: server:data().
 register(Sender, Account, Data) ->
-    SID = maps:get(id, Data),
-    UserDB = maps:get(users, Data),
+    SID = map_get(id, Data),
+    UserDB = map_get(users, Data),
     NewAccount = add_server(SID, Account),
     case db_store(NewAccount, UserDB) of
         {ok, NewUserDB} ->
             % Add account to user database and active user set
             Sender ! {self(), account_register, {ok, NewAccount}},
-            Active = maps:get(active, Data),
+            Active = map_get(active, Data),
             Data#{
-                users => NewUserDB,
-                active => Active#{Sender => Account#account.id}
+                users := NewUserDB,
+                active := Active#{Sender => map_get(id, Account)}
             };
         error ->
             Sender ! {self(), account_register, {fail, username_taken}},
@@ -83,12 +79,11 @@ register(Sender, Account, Data) ->
     Username :: account:id(),
     Password :: pw:pw().
 login(Sender, Username, Password, Data) ->
-    #server{users = UserDB, active = Active} = Data,
-    NotActive = not maps:is_key(Sender, Active),
+    #{users := UserDB, active := Active} = Data,
     case catch pw:verify(db_fetch(Username, UserDB), Password) of
-        {ok, Account} when NotActive ->
+        {ok, Account} when not is_map_key(Sender, Active) ->
             Sender ! {self(), account_login, {ok, Account}},
-            Data#server{active = maps:put(Sender, Username, Active)};
+            Data#{active := Active#{Sender => Username}};
         Else ->
             case Else of
                 {ok, Account} ->
@@ -102,14 +97,17 @@ login(Sender, Username, Password, Data) ->
             Data
     end.
 
--spec logout(Sender, Username, server:data()) -> server:data() when
+-spec logout(Sender, Username, Data1) -> Data2 when
     Sender :: pid(),
-    Username :: account:id().
+    Username :: account:id(),
+    Data1 :: server:data(),
+    Data2 :: server:data().
 logout(Sender, Username, Data) ->
-    case maps:take(Sender, Data#server.active) of
+    Active = map_get(active, Data),
+    case maps:take(Sender, Active) of
         {UID, NewActive} when UID == Username ->
             Sender ! {self(), account_logout, ok},
-            Data#server{active = NewActive};
+            Data#{active := NewActive};
         {UID, _} ->
             ?LOG_WARNING("account_logout username mismatch: ~w => ~w", [Username, UID]),
             Sender ! {self(), account_logout, {fail, bad_id}},

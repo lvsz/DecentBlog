@@ -1,6 +1,5 @@
 -module(account_tests).
 
--include("account.hrl").
 -include_lib("eunit/include/eunit.hrl").
 
 register_test() ->
@@ -14,8 +13,8 @@ register_test() ->
     ?assertMatch({_, account_register, {ok, _}}, Msg1),
     {_, _, {_, NewAcc1}} = Msg1,
     ?assertNotEqual(Acc1, NewAcc1, "Account should be updated"),
-    ?assertEqual(UID, NewAcc1#account.id, "User ID should stay the same"),
-    ?assertEqual(SID, NewAcc1#account.server, "Account should include server"),
+    ?assertEqual(UID, map_get(id, NewAcc1), "User ID should stay the same"),
+    ?assertEqual(SID, map_get(server, NewAcc1), "Account should include server"),
     %% TODO: move UserDB from account to server
     %%?assertEqual(Acc1, account:db_fetch(UID, Data1#server.users)),
     Acc2 = account:new(UID, <<"bar">>),
