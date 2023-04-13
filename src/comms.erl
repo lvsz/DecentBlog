@@ -1,10 +1,10 @@
 -module(comms).
--export([new_post/2, new_channel/1, get_posts/2, post_to/2]).
+-export([new_post/2, new_channel/1, post_put/3, post_get/3]).
 -export_type([scope/0, channel/0]).
 
 -type scope() :: public | server | account | invite.
 -type channel(Scope) :: {Scope, [post()]}.
--type channel() :: channel(_).
+-type channel() :: [post()].
 -type post() :: #{
     user => user:id(),
     text => string()
@@ -19,21 +19,25 @@ new_post(UserID, Text) ->
 -spec new_channel(Scope :: scope()) -> channel().
 new_channel(Scope) -> {Scope, []}.
 
--spec post_to(Post, Channel1) -> Channel2 when
+-spec post_put(Sender, Post, Data1) -> Data2 when
+    Sender :: pid(),
     Post :: post(),
-    Channel1 :: channel(Scope),
-    Channel2 :: channel(Scope).
-post_to(Post, Channel) ->
-    {Scope, Posts} = Channel,
-    {Scope, [Post | Posts]}.
+    Data1 :: server:data(),
+    Data2 :: server:data().
+post_put(Sender, Post, Data) ->
+    %% TODO: verify account id and login before posting
+    Channel = maps:get(channel, Data),
+    Sender ! {self(), post_put, ok},
+    Data#{channel => [Post | Channel]}.
 
--spec get_posts(Number, Channel) -> Posts when
+-spec post_get(Sender, Number, Data) -> Data when
+    Sender :: pid(),
     Number :: non_neg_integer(),
-    Channel :: channel(),
-    Posts :: [post()].
-get_posts(Number, Channel) ->
-    {_Scope, Posts} = Channel,
-    lists:sublist(Posts, Number).
+    Data :: server:data().
+post_get(Sender, Number, Data) ->
+    Posts = maps:get(channel, Data),
+    Sender ! lists:sublist(Posts, Number),
+    Data.
 
 %-spec new_follow_list() -> follow_list().
 %new_follow_list() -> [].

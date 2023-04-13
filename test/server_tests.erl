@@ -7,7 +7,7 @@
 -include_lib("kernel/include/logger.hrl").
 -include_lib("eunit/include/eunit.hrl").
 
-registration_test(Account, ServerID) ->
+test_registration(Account, ServerID) ->
     ?assert(lists:member(ServerID, registered()), "is server reachable"),
     ServerID ! {self(), register, Account},
     ?LOG_INFO("Testing user registrating", [Account]),
@@ -27,4 +27,3 @@ registration_test(Account, ServerID) ->
     ?assertMatch({ok, #account{id = UID, server = ServerID}}, Response),
     Response.
 
-%login_test(Account, ServerID) -> todo.

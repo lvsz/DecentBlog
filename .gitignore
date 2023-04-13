@@ -2,6 +2,7 @@ build
 logs
 data
 
+erl_crash.dump
 erlang_ls.config
 _build
 

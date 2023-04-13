@@ -1,28 +1,32 @@
 .PHONY: all test benchmark clean
 
-export ERLC ERLC_FLAGS HEADERS BUILD VPATH RUN_SH
-
 BUILD		= ./build
-SRC			= ./src
 INCLUDE		= ./include
-VPATH		= $(SRC):$(BUILD):$(INCLUDE)
-
-ERL_FILES	= $(wildcard $(SRC)/*.erl)
-OBJECTS		= $(ERL_FILES:$(SRC)/%.erl=%.beam)
 HEADERS		= $(wildcard $(INCLUDE)/*.hrl)
 ERLC_FLAGS	= -Wall -I $(INCLUDE)
 ERLC		= erlc +debug_info
-RUN_SH		= ./run.sh
+
+APP_ERL		= $(wildcard src/*.erl)
+APP_OBJ		= $(SRC_ERL:src/%.erl=$(BUILD)/%.beam)
 
 $(shell mkdir -p $(BUILD))
 
-all: $(OBJECTS)
+all: $(APP_OBJ)
 
-%.beam: %.erl $(HEADERS)
+$(BUILD)/%.beam: src/%.erl $(HEADERS)
+	@echo "$< => $@"
+	@$(ERLC) $(ERLC_FLAGS) -o $(BUILD) $<
+
+
+TEST_ERL	= $(wildcard test/*_tests.erl)
+TEST_OBJ	= $(TEST_ERL:test/%.erl=%.beam)
+
+test: $(TEST_OBJ)
+
+%_tests.beam: test/%_tests.erl $(HEADERS)
 	$(ERLC) $(ERLC_FLAGS) -o $(BUILD) $<
-
-test: all
-	@$(MAKE) -f test/Makefile run_tests
+	@echo testing: $@
+	@erl -noshell -pa $(BUILD) -s $* test -s init stop
 
 
 benchmark: *.beam
@@ -31,5 +35,4 @@ benchmark: *.beam
 
 clean:
 	$(RM) -r $(BUILD) erl_crash.dump
-	@$(MAKE) -f test/Makefile clean_tests
 
