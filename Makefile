@@ -1,31 +1,33 @@
 .PHONY: all test benchmark clean
 
-BUILD		= ./build
-INCLUDE		= ./include
-HEADERS		= $(wildcard $(INCLUDE)/*.hrl)
-ERLC_FLAGS	= -Wall -I $(INCLUDE)
-ERLC		= erlc +debug_info
+BUILD		:= ./build
+INCLUDE		:= ./include
+HEADERS		:= $(wildcard $(INCLUDE)/*.hrl) $(wildcard src/*.hrl)
+ERLC_FLAGS	:= -Wall -I $(INCLUDE)
+ERLC		:= erlc +debug_info
 
-APP_ERL		= $(wildcard src/*.erl)
-APP_OBJ		= $(SRC_ERL:src/%.erl=$(BUILD)/%.beam)
+APP_SRC		:= $(wildcard src/*.erl)
+APP_OBJ		:= $(APP_SRC:src/%.erl=$(BUILD)/%.beam)
 
-$(shell mkdir -p $(BUILD))
+TEST_SRC	:= $(wildcard test/*_tests.erl)
+TEST_OBJ	:= $(TEST_SRC:test/%.erl=$(BUILD)/%.beam)
+TESTS		:= $(TEST_OBJ:$(BUILD)/%.beam=%)
 
-all: $(APP_OBJ)
+all: $(shell mkdir -p $(BUILD)) $(APP_OBJ)
+
+
+test: all $(TEST_OBJ) $(TESTS)
 
 $(BUILD)/%.beam: src/%.erl $(HEADERS)
 	@echo "$< => $@"
 	@$(ERLC) $(ERLC_FLAGS) -o $(BUILD) $<
 
+$(BUILD)/%_tests.beam: test/%_tests.erl $(HEADERS)
+	@echo "$< => $@"
+	@$(ERLC) $(ERLC_FLAGS) -o $(BUILD) $<
 
-TEST_ERL	= $(wildcard test/*_tests.erl)
-TEST_OBJ	= $(TEST_ERL:test/%.erl=%.beam)
-
-test: $(TEST_OBJ)
-
-%_tests.beam: test/%_tests.erl $(HEADERS)
-	$(ERLC) $(ERLC_FLAGS) -o $(BUILD) $<
-	@echo testing: $@
+%_tests:
+	@echo testing: $*
 	@erl -noshell -pa $(BUILD) -s $* test -s init stop
 
 
