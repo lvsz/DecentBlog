@@ -10,9 +10,15 @@
 
 encode(Text) -> crypto:hash(blake2s, Text).
 
--spec sign(Account :: #account{}, PlainText :: string()) -> #account{}.
-sign(Account, PlainText) -> Account#account{password = encode(PlainText)}.
+-spec sign(PlainText, Account1) -> Account2 when
+    PlainText :: string(),
+    Account1 :: account:account(),
+    Account2 :: account:account().
+sign(Account, PlainText) ->
+    Account#{password => encode(PlainText)}.
 
--spec verify(Account :: #account{}, Password :: pw()) -> boolean().
-verify(#account{password = Password}, Password) -> true;
-verify(_Account, _Password) -> false.
+-spec verify(Account, Password) -> boolean() when
+    Account :: account:account(),
+    Password :: pw:pw().
+verify(Account, Password) ->
+    maps:get(password, Account) == Password.
