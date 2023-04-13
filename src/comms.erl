@@ -2,6 +2,8 @@
 -export([new_post/2, new_channel/1, post_put/3, post_get/3]).
 -export_type([scope/0, channel/0]).
 
+-include_lib("eunit/include/eunit.hrl").
+
 -type scope() :: public | server | account | invite.
 -type channel(Scope) :: {Scope, [post()]}.
 -type channel() :: [post()].
@@ -30,13 +32,13 @@ post_put(Sender, Post, Data) ->
     Sender ! {self(), post_put, ok},
     Data#{channel => [Post | Channel]}.
 
--spec post_get(Sender, Number, Data) -> Data when
+-spec post_get(Sender, Amount, Data) -> Data when
     Sender :: pid(),
-    Number :: non_neg_integer(),
+    Amount :: non_neg_integer() | all,
     Data :: server:data().
-post_get(Sender, Number, Data) ->
+post_get(Sender, Amount, Data) ->
     Posts = maps:get(channel, Data),
-    Sender ! lists:sublist(Posts, Number),
+    Sender ! lists:sublist(Posts, Amount),
     Data.
 
 %-spec new_follow_list() -> follow_list().
